@@ -1,0 +1,23 @@
+<h1>{{ section.settings.title }}</h1>
+<p>{{ section.settings.content_text }}</p>
+
+
+{% schema %}
+{
+    "name": "page 404",
+    "settings": [
+        {
+            "type": "text",
+            "id": "title",
+            "default": "Oopps.. Page not found",
+            "label": "Page title"
+        },
+        {
+            "type": "text",
+            "id": "content_text",
+            "default": "page is missing and unable to locate. Back to home page",
+            "label": "Page content"
+        }
+    ]
+}
+{% endschema %}

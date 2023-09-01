@@ -1,1 +1,137 @@
-I am Header
+{% comment %}
+  This is only a fixed for the old bug, menus not showing on 404 page.
+  This is now fixed but keep it here for reference.
+{% endcomment %}
+{% comment %}
+      {% liquid
+          if section.settings.menu.links == blank
+              assign menu_menu_link = linklists[section.settings.menu]
+          else
+              assign menu_menu_link = section.settings.menu.links
+          endif
+  %}
+{% endcomment %}
+
+<div x-data="{ mobileMenuOpen: true }" class="flex justify-between items-center">
+  <!-- LOGO / STORE NAME -->
+  <h1>Logo: {{ shop.name }}</h1>
+
+  <!-- NAVIGATION MENU -->
+  <button
+    x-on:click="mobileMenuOpen=true"
+    type="button"
+    class="inline-block w-7 h-7"
+  >
+    {% render 'icon-bars' %}
+  </button>
+  <div x-show="mobileMenuOpen" style="display: none;">
+    {% for link in section.settings.menu.links %}
+      <!-- meaning if there is link that has sublinks -->
+      {% assign link_handle = link.handle | replace: '-', '_' %}
+      {% if link.links != blank %}
+        <div
+          x-data="
+            {
+                {{link_handle}}: false,
+                toggle() {
+                    if (this['{{link_handle}}']) {
+                        return this.close()
+                    }
+
+                    this.$refs.button.focus()
+
+                    this['{{link_handle}}'] = true
+                },
+                close(focusAfter) {
+                    if (! this['{{link_handle}}']) return
+
+                    this['{{link_handle}}'] = false
+
+                    focusAfter && focusAfter.focus()
+                }
+            }
+          "
+          x-on:keydown.escape.prevent.stop="close($refs.button)"
+          x-on:focusin.window="! $refs.panel.contains($event.target) && close()"
+          x-id="['dropdown-button']"
+          class="relative"
+        >
+          <button
+            x-ref="button"
+            x-on:click="toggle()"
+            :aria-expanded="{{link_handle}}"
+            :aria-controls="$id('dropdown-button')"
+            type="button"
+          >
+            {{ link.title }}
+            {% render 'icon-dropdown', dropdownClass: 'h-4 w-4 inline-block' %}
+          </button>
+
+          <ul
+            x-ref="panel"
+            x-show="{{link_handle}}"
+            {% comment %} x-transition.origin.top.left {% endcomment %}
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-3"
+            x-transition:enter-end="opacity-1 translate-y-0"
+            x-transition:leave="transition ease-out duration-300"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-3"
+            x-on:click.outside="close($refs.button)"
+            :id="$id('dropdown-button')"
+            style="display: none;"
+            class="absolute transform left-0 mt-2 w-40 rounded-md bg-white shadow-md"
+          >
+            {% for sublink in link.links %}
+              <li>
+                <a href="{{ sublink.url }}">{{ sublink.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% else %}
+        <div>
+          <a href="{{ link.url }}">{% echo link.title %} </a>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <!-- CUSTOMER LINKS MENU -->
+    {% if shop.customer_accounts_enabled %}
+      <!-- if settings on admin enabled the customer creation -->
+      {% if customer %}
+        <!-- if customer is loggedin -->
+        <a href="/account">account</a>
+        <!-- this is "customer_logout_link" filter that will create a customer logout link anchor -->
+        <!-- this is "replace" filter that will replace the "<a" with the one with class -->
+        {{ 'Log out' | customer_logout_link | replace: '<a', '<a class="p-4"' }}
+      {% else %}
+        {{ 'Log in' | customer_login_link | replace: '<a', '<a class="p-4"' }}
+        {{ 'Sign up' | customer_register_link | replace: '<a', '<a class="p-4"' }}
+      {% endif %}
+    {% endif %}
+  </div>
+  <h1>{{ section.settings.mobile_menu_title }}</h1>
+</div>
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    {
+      "type": "text",
+      "id": "mobile_menu_title",
+      "default": "Menu is here i go",
+      "label": "mobile menu title"
+    },
+    {
+      "type": "link_list",
+      "id": "menu" /* "menu" is from before "links"  on this section.settings.menu.links */,
+      /* this is a handle name "main-menu" represents the store main menu, there is also another option is the footer menu is "footer"
+             A handle is used to reference a menu in Liquid. e.g. a menu with the title “Sidebar menu” would have the handle sidebar-menu by default
+            */
+      "default": "main-menu",
+      "label": "Heading navigation menu"
+    }
+  ]
+}
+{% endschema %}
